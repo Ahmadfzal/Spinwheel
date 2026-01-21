@@ -15,7 +15,7 @@ const SEGMENTS = [
   { label: "JACKPOT X 10", color: "#ffeb3b" }
 ];
 
-export function SpinWheel({ user }: { user: any }) {
+export function SpinWheel() {
   const [isSpinning, setIsSpinning] = useState(false);
   const controls = useAnimation();
   const queryClient = useQueryClient();
