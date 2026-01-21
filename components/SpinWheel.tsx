@@ -2,34 +2,40 @@
 
 import { useState } from "react";
 import { motion, useAnimation } from "framer-motion";
-import { useQueryClient } from "@tanstack/react-query";
 
+/**
+ * 8 SEGMENT (45° per segment)
+ * Urutan HARUS konsisten dengan backend
+ */
 const SEGMENTS = [
-  { label: "Zonk", color: "#f44336" },
-  { label: "JACKPOT X 2", color: "#ff9800" },
-  { label: "Zonk", color: "#f44336" },
-  { label: "FREE SPIN 1X", color: "#4caf50" },
-  { label: "Zonk", color: "#f44336" },
-  { label: "JACKPOT X 3", color: "#9c27b0" },
-  { label: "FREE SPIN 2X", color: "#2196f3" },
-  { label: "JACKPOT X 10", color: "#ffeb3b" }
+  { label: "ZONK", color: "#f44336" },
+  { label: "JACKPOT X2", color: "#ff9800" },
+  { label: "ZONK", color: "#f44336" },
+  { label: "FREE SPIN 1", color: "#4caf50" },
+  { label: "ZONK", color: "#f44336" },
+  { label: "JACKPOT X3", color: "#9c27b0" },
+  { label: "FREE SPIN 2", color: "#2196f3" },
+  { label: "JACKPOT X10", color: "#ffeb3b" }
 ];
 
 export function SpinWheel() {
   const [isSpinning, setIsSpinning] = useState(false);
   const controls = useAnimation();
-  const queryClient = useQueryClient();
 
-  const handleSpin = async () => {
+  const spin = async () => {
     if (isSpinning) return;
     setIsSpinning(true);
 
+    // ambil hasil dari backend
     const res = await fetch("/api/spins", { method: "POST" });
     const { targetSegmentIndex } = await res.json();
 
-    const angle = 360 / SEGMENTS.length;
+    const anglePerSegment = 360 / SEGMENTS.length;
+
+    // RUMUS PRESISI
     const rotation =
-      360 * 5 + (360 - targetSegmentIndex * angle - angle / 2);
+      360 * 5 +
+      (360 - targetSegmentIndex * anglePerSegment - anglePerSegment / 2);
 
     await controls.start({
       rotate: rotation,
@@ -37,9 +43,9 @@ export function SpinWheel() {
     });
 
     setIsSpinning(false);
-    queryClient.invalidateQueries();
   };
 
+  // CONIC GRADIENT (AMAN & PRESISI)
   const gradient = SEGMENTS.map((s, i) => {
     const start = i * (360 / SEGMENTS.length);
     const end = start + 360 / SEGMENTS.length;
@@ -47,28 +53,70 @@ export function SpinWheel() {
   }).join(", ");
 
   return (
-    <div className="flex flex-col items-center gap-8 text-white">
-      <div className="relative w-80 h-80">
-
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "#0f172a",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "white"
+      }}
+    >
+      {/* CONTAINER RODA */}
+      <div
+        style={{
+          position: "relative",
+          width: 300,
+          height: 300,
+          marginBottom: 40
+        }}
+      >
         {/* JARUM */}
-        <div className="absolute top-[-18px] left-1/2 -translate-x-1/2 z-10
-          w-0 h-0 border-l-[12px] border-r-[12px]
-          border-b-[22px] border-transparent border-b-white" />
+        <div
+          style={{
+            position: "absolute",
+            top: -18,
+            left: "50%",
+            transform: "translateX(-50%)",
+            width: 0,
+            height: 0,
+            borderLeft: "12px solid transparent",
+            borderRight: "12px solid transparent",
+            borderBottom: "22px solid white",
+            zIndex: 10
+          }}
+        />
 
         {/* RODA */}
         <motion.div
           animate={controls}
-          className="w-full h-full rounded-full border-8 border-yellow-500 shadow-2xl"
           style={{
-            background: `conic-gradient(${gradient})`
+            width: "100%",
+            height: "100%",
+            borderRadius: "50%",
+            border: "8px solid gold",
+            background: `conic-gradient(${gradient})`,
+            boxShadow: "0 20px 40px rgba(0,0,0,0.5)"
           }}
         />
       </div>
 
+      {/* TOMBOL */}
       <button
-        onClick={handleSpin}
+        onClick={spin}
         disabled={isSpinning}
-        className="px-12 py-4 bg-yellow-500 text-black font-black rounded-full text-2xl"
+        style={{
+          padding: "14px 40px",
+          fontSize: 20,
+          fontWeight: "bold",
+          borderRadius: 30,
+          border: "none",
+          cursor: "pointer",
+          background: isSpinning ? "#999" : "#facc15",
+          color: "#000"
+        }}
       >
         {isSpinning ? "SPINNING..." : "SPIN"}
       </button>
